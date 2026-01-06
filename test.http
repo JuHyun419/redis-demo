@@ -1,0 +1,264 @@
+### ==================== String ====================
+
+### Set String
+POST http://localhost:7002/api/v1/string
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "user:1"
+  },
+  "value": "JuHyunasdsalkdjsalkdjsakljd"
+}
+
+### Get String
+GET http://localhost:7002/api/v1/string?key=user:1
+
+### Multi Set Strings
+POST http://localhost:7002/api/v1/string/multi
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "multi:user:1"
+  },
+  "names": ["Alice", "Bob", "Charlie", "Mike"]
+}
+
+### ==================== Sorted Set (기본) ====================
+
+### Sorted Set - 멤버 추가 (게임 랭킹 예시)
+POST http://localhost:7002/api/v1/sorted-set
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "ranking:game1"
+  },
+  "memberId": "player1",
+  "name": "Alice",
+  "score": 1500
+}
+
+### Sorted Set - 멤버 추가 2
+POST http://localhost:7002/api/v1/sorted-set
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "ranking:game1"
+  },
+  "memberId": "player2",
+  "name": "Bob",
+  "score": 2300
+}
+
+### Sorted Set - 멤버 추가 3
+POST http://localhost:7002/api/v1/sorted-set
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "ranking:game1"
+  },
+  "memberId": "player3",
+  "name": "Charlie",
+  "score": 1800
+}
+
+### Sorted Set - 멤버 추가 4
+POST http://localhost:7002/api/v1/sorted-set
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "ranking:game1"
+  },
+  "memberId": "player4",
+  "name": "David",
+  "score": 3100
+}
+
+### Sorted Set - 멤버 추가 5
+POST http://localhost:7002/api/v1/sorted-set
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "ranking:game1"
+  },
+  "memberId": "player5",
+  "name": "Eve",
+  "score": 2750
+}
+
+### Sorted Set - 상위 3명 조회
+GET http://localhost:7002/api/v1/sorted-set/top?key=ranking:game1&n=3
+
+### Sorted Set - 점수 범위 조회 (1500 ~ 2500점)
+GET http://localhost:7002/api/v1/sorted-set/range?key=ranking:game1&minScore=1500&maxScore=2500
+
+### ==================== Sorted Set (심화) ====================
+
+### 특정 멤버 순위 조회 (Alice의 순위)
+GET http://localhost:7002/api/v1/sorted-set/rank?key=ranking:game1&memberId=player1&name=Alice&score=1500
+
+### 특정 멤버 순위 조회 (David의 순위 - 1위 예상)
+GET http://localhost:7002/api/v1/sorted-set/rank?key=ranking:game1&memberId=player4&name=David&score=3100
+
+### 점수 증가 (Alice +500점)
+PATCH http://localhost:7002/api/v1/sorted-set/score?key=ranking:game1&memberId=player1&name=Alice&currentScore=1500&delta=500
+
+### 점수 감소 (David -1000점)
+PATCH http://localhost:7002/api/v1/sorted-set/score?key=ranking:game1&memberId=player4&name=David&currentScore=3100&delta=-1000
+
+### Sorted Set 통계 조회 (전체 멤버 수)
+GET http://localhost:7002/api/v1/sorted-set/stats?key=ranking:game1
+
+### 점수 범위 내 멤버 수 조회 (2000점 이상)
+GET http://localhost:7002/api/v1/sorted-set/count?key=ranking:game1&minScore=2000&maxScore=10000
+
+### 멤버 삭제 (Bob 삭제)
+DELETE http://localhost:7002/api/v1/sorted-set?key=ranking:game1&memberId=player2&name=Bob&score=2300
+
+### 삭제 후 전체 조회
+GET http://localhost:7002/api/v1/sorted-set/top?key=ranking:game1&n=10
+
+### ==================== Hash (기본) ====================
+
+### Hash - 단일 필드 저장
+POST http://localhost:7002/api/v1/hash
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "user:100"
+  },
+  "field": "name",
+  "value": "JuHyun"
+}
+
+### Hash - 단일 필드 저장 2
+POST http://localhost:7002/api/v1/hash
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "user:100"
+  },
+  "field": "email",
+  "value": "juhyun@example.com"
+}
+
+### Hash - 단일 필드 저장 3 (나이)
+POST http://localhost:7002/api/v1/hash
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "user:100"
+  },
+  "field": "age",
+  "value": "28"
+}
+
+### Hash - 필드 조회
+GET http://localhost:7002/api/v1/hash?key=user:100&field=name
+
+### Hash - 사용자 프로필 저장 (객체)
+POST http://localhost:7002/api/v1/hash/profile
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "user:200"
+  },
+  "field": "profile",
+  "profile": {
+    "name": "Alice",
+    "email": "alice@example.com",
+    "age": 25
+  }
+}
+
+### Hash - 사용자 프로필 조회
+GET http://localhost:7002/api/v1/hash/profile?key=user:200&field=profile
+
+### Hash - 필드 삭제
+DELETE http://localhost:7002/api/v1/hash?key=user:100&fields=email
+
+### ==================== Hash (심화) ====================
+
+### Hash - 여러 필드 한번에 저장
+POST http://localhost:7002/api/v1/hash/multi
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "product:1"
+  },
+  "fields": [
+    {"field": "name", "value": "MacBook Pro"},
+    {"field": "price", "value": "2500000"},
+    {"field": "stock", "value": "50"},
+    {"field": "category", "value": "Electronics"}
+  ]
+}
+
+### Hash - 전체 조회
+GET http://localhost:7002/api/v1/hash/all?key=product:1
+
+### Hash - 전체 조회 (user:100)
+GET http://localhost:7002/api/v1/hash/all?key=user:100
+
+### Hash - 통계 조회 (필드 개수, 필드 목록)
+GET http://localhost:7002/api/v1/hash/stats?key=product:1
+
+### Hash - 필드 존재 여부 확인
+GET http://localhost:7002/api/v1/hash/exists?key=product:1&field=price
+
+### Hash - 필드 존재 여부 확인 (없는 필드)
+GET http://localhost:7002/api/v1/hash/exists?key=product:1&field=discount
+
+### Hash - 숫자 필드 증가 (재고 +10)
+PATCH http://localhost:7002/api/v1/hash/increment?key=product:1&field=stock&delta=10
+
+### Hash - 숫자 필드 감소 (재고 -5)
+PATCH http://localhost:7002/api/v1/hash/increment?key=product:1&field=stock&delta=-5
+
+### Hash - 조회수 카운터 (없는 필드도 자동 생성됨)
+PATCH http://localhost:7002/api/v1/hash/increment?key=product:1&field=viewCount&delta=1
+
+### Hash - 변경 후 전체 조회
+GET http://localhost:7002/api/v1/hash/all?key=product:1
+
+### ==================== Strategy (Lua Script) ====================
+
+### 1. 먼저 테스트용 키 2개 생성
+POST http://localhost:7002/api/v1/string
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "num:1"
+  },
+  "value": "100"
+}
+
+### 2. 두번째 키 생성
+POST http://localhost:7002/api/v1/string
+Content-Type: application/json
+
+{
+  "baseRequest": {
+    "key": "num:2"
+  },
+  "value": "250"
+}
+
+### 3. Lua Script 실행 - 두 키의 값을 더해서 새 키에 저장
+### num:1 (100) + num:2 (250) = num:result (350)
+GET http://localhost:7002/api/v1/strategy/lua-script?key1=num:1&key2=num:2&newKey=num:result
+
+### 4. 결과 확인
+GET http://localhost:7002/api/v1/string?key=num:result
