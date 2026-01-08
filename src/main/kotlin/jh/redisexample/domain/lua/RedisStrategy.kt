@@ -2,7 +2,6 @@ package jh.redisexample.domain.lua
 
 import jh.redisexample.common.redis.RedisCommon
 import jh.redisexample.domain.string.StringModel
-import org.redisson.api.RedissonClient
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import kotlin.math.exp
@@ -10,7 +9,6 @@ import kotlin.math.exp
 @Service
 class RedisStrategy(
     private val redis: RedisCommon,
-    private val redissonClient: RedissonClient,
 ) {
     fun perStrategy(key: String): StringModel {
         val valueWithTTL = redis.getValueWithTTL<StringModel>(key)

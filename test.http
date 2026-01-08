@@ -258,7 +258,207 @@ Content-Type: application/json
 
 ### 3. Lua Script 실행 - 두 키의 값을 더해서 새 키에 저장
 ### num:1 (100) + num:2 (250) = num:result (350)
-GET http://localhost:7002/api/v1/strategy/lua-script?key1=num:1&key2=num:2&newKey=num:result
+GET http://localhost:7002/api/v1/strategy/lua-script?key1=number_one&key2=number_two&newKey=newKey
 
 ### 4. 결과 확인
 GET http://localhost:7002/api/v1/string?key=num:result
+
+### ==================== Distributed Lock (분산락) ====================
+
+### ===== 1. 테스트 준비 =====
+
+### 1-1. 테스트용 상품 생성 (재고 100개)
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-001",
+  "name": "아이폰 15 Pro",
+  "stock": 100,
+  "price": 1500000
+}
+
+### 1-2. 상품 조회
+GET http://localhost:7002/api/v1/lock/product?productId=PRODUCT-001
+
+### ===== 2. 개별 재고 차감 테스트 =====
+
+### 2-1. 락 없이 재고 차감
+POST http://localhost:7002/api/v1/lock/stock/decrease/no-lock?productId=PRODUCT-001&quantity=1
+
+### 2-2. 분산락으로 재고 차감
+POST http://localhost:7002/api/v1/lock/stock/decrease/with-lock?productId=PRODUCT-001&quantity=1
+
+### 2-3. 차감 후 재고 확인
+GET http://localhost:7002/api/v1/lock/product?productId=PRODUCT-001
+
+### ===== 3. 동시성 테스트 (핵심!) =====
+
+### 3-0. 테스트 전 상품 재생성 (재고 100개로 리셋)
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-001",
+  "name": "아이폰 15 Pro",
+  "stock": 100,
+  "price": 1500000
+}
+
+### 3-1. 락 없이 동시성 테스트 (10개 동시 요청, 각 1개 차감)
+### 예상: 재고 90개 / 실제: 91~99개 (동시성 문제 발생!)
+POST http://localhost:7002/api/v1/lock/test/concurrency/no-lock
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-001",
+  "concurrentRequests": 10,
+  "quantityPerRequest": 1
+}
+
+### 3-2. 테스트 후 재고 확인 (90이 아닐 수 있음!)
+GET http://localhost:7002/api/v1/lock/product?productId=PRODUCT-001
+
+### 3-3. 상품 재생성 (분산락 테스트를 위해)
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-001",
+  "name": "아이폰 15 Pro",
+  "stock": 100,
+  "price": 1500000
+}
+
+### 3-4. 분산락으로 동시성 테스트 (10개 동시 요청, 각 1개 차감)
+### 예상: 재고 90개 / 실제: 정확히 90개! ✅
+POST http://localhost:7002/api/v1/lock/test/concurrency/with-lock
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-001",
+  "concurrentRequests": 10,
+  "quantityPerRequest": 1
+}
+
+### 3-5. 테스트 후 재고 확인 (정확히 90!)
+GET http://localhost:7002/api/v1/lock/product?productId=PRODUCT-001
+
+### ===== 4. 대량 동시성 테스트 =====
+
+### 4-1. 상품 재생성 (재고 1000개)
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-002",
+  "name": "맥북 프로 16인치",
+  "stock": 1000,
+  "price": 3500000
+}
+
+### 4-2. 락 없이 100개 동시 요청 (심각한 문제 발생!)
+POST http://localhost:7002/api/v1/lock/test/concurrency/no-lock
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-002",
+  "concurrentRequests": 100,
+  "quantityPerRequest": 1
+}
+
+### 4-3. 상품 재생성
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-002",
+  "name": "맥북 프로 16인치",
+  "stock": 100000,
+  "price": 3500000
+}
+
+### 4-4. 분산락으로 100개 동시 요청 (정상 동작!)
+POST http://localhost:7002/api/v1/lock/test/concurrency/with-lock
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-002",
+  "concurrentRequests": 5000,
+  "quantityPerRequest": 1
+}
+
+### ===== 5. Lua Script 동시성 테스트 (가장 빠름!) =====
+
+### 5-1. 상품 재생성 (재고 10만개)
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-LUA",
+  "name": "Lua 테스트 상품",
+  "stock": 100000,
+  "price": 1000000
+}
+
+### 5-2. Lua Script로 5000개 동시 요청 (빠르고 정확!)
+POST http://localhost:7002/api/v1/lock/test/concurrency/lua
+Content-Type: application/json
+
+{
+  "productId": "PRODUCT-LUA",
+  "concurrentRequests": 5000,
+  "quantityPerRequest": 1
+}
+
+### 5-3. 결과 확인
+GET http://localhost:7002/api/v1/lock/product?productId=PRODUCT-LUA
+
+### ===== 6. 성능 비교 테스트 =====
+
+### 6-1. 상품 재생성
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PERF-TEST",
+  "name": "성능 테스트 상품",
+  "stock": 10000,
+  "price": 1000000
+}
+
+### 6-2. 분산락 100개 요청 (느림)
+POST http://localhost:7002/api/v1/lock/test/concurrency/with-lock
+Content-Type: application/json
+
+{
+  "productId": "PERF-TEST",
+  "concurrentRequests": 5000,
+  "quantityPerRequest": 1
+}
+
+### 6-3. 상품 재생성
+POST http://localhost:7002/api/v1/lock/product
+Content-Type: application/json
+
+{
+  "productId": "PERF-TEST",
+  "name": "성능 테스트 상품",
+  "stock": 1000,
+  "price": 1000000
+}
+
+### 6-4. Lua Script 100개 요청 (빠름!)
+POST http://localhost:7002/api/v1/lock/test/concurrency/lua
+Content-Type: application/json
+
+{
+  "productId": "PERF-TEST",
+  "concurrentRequests": 1000,
+  "quantityPerRequest": 1
+}
+
+### ===== 7. 락 상태 확인 =====
+
+### 락 상태 확인
+GET http://localhost:7002/api/v1/lock/status?key=stock:PRODUCT-001

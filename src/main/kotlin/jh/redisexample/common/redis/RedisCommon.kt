@@ -25,7 +25,7 @@ final class RedisCommon(
     inline fun <reified T : Any> get(key: String): T? =
         valueOps.get(key)?.let { gson.fromJson(it, T::class.java) }
 
-    fun <T : Any> set(key: String, value: T, ttl: Duration = Duration.ofMinutes(1)) {
+    fun <T : Any> set(key: String, value: T, ttl: Duration = Duration.ofMinutes(5)) {
         valueOps.set(key, gson.toJson(value), ttl)
     }
 
@@ -226,5 +226,19 @@ final class RedisCommon(
         val keys = listOf(key1, key2, resultKey)
 
         return redisTemplate.execute(redisScript, keys)
+    }
+
+    // ===== Lua Script Operations =====
+
+    /**
+     * Lua Script로 재고 차감 (원자적 연산 - 락 불필요!)
+     */
+    fun decreaseStockWithLua(key: String, quantity: Int): String? {
+        val redisScript = DefaultRedisScript<String>().apply {
+            setLocation(ClassPathResource("lua/decrease_stock.lua"))
+            resultType = String::class.java
+        }
+
+        return redisTemplate.execute(redisScript, listOf(key), quantity.toString())
     }
 }

@@ -1,5 +1,8 @@
 package jh.redisexample.config
 
+import org.redisson.Redisson
+import org.redisson.api.RedissonClient
+import org.redisson.config.Config
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
@@ -15,15 +18,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 class RedisConfig(
     @Value("\${spring.data.redis.host}") private val host: String,
     @Value("\${spring.data.redis.port}") private val port: Int,
-    @Value("\${spring.data.redis.password}") private val password: String
 ) {
     @Bean
     fun redisConnectionFactory(): RedisConnectionFactory {
-        return LettuceConnectionFactory(
-            RedisStandaloneConfiguration(host, port).apply {
-                password = password
-            }
-        )
+        return LettuceConnectionFactory(RedisStandaloneConfiguration(host, port))
     }
 
     @Bean
@@ -39,14 +37,10 @@ class RedisConfig(
 
     @Bean
     fun redissonClient(): RedissonClient {
-        val address = "redis://$host:$port"
-
         val config = Config().apply {
             useSingleServer()
-                .setAddress(address)
-                .setPassword(password.takeIf { it.isNotEmpty() })
+                .setAddress("redis://$host:$port")
         }
-
         return Redisson.create(config)
     }
 }
